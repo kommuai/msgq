@@ -12,9 +12,16 @@ void VisionBuf::init_yuv(size_t init_width, size_t init_height, size_t init_stri
 
 
 uint64_t VisionBuf::get_frame_id() {
-  return *frame_id;
+  if (frame_id_in_buf && frame_id != nullptr) {
+    return *frame_id;
+  }
+  return frame_id_fallback;
 }
 
 void VisionBuf::set_frame_id(uint64_t id) {
-  *frame_id = id;
+  if (frame_id_in_buf && frame_id != nullptr) {
+    *frame_id = id;
+  } else {
+    frame_id_fallback = id;
+  }
 }

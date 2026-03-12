@@ -33,6 +33,8 @@ class VisionBuf {
   size_t height = 0;
   size_t stride = 0;
   size_t uv_offset = 0;
+  bool frame_id_in_buf = true;
+  uint64_t frame_id_fallback = 0;
 
   // YUV
   uint8_t * y = nullptr;

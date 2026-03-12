@@ -56,6 +56,7 @@ void VisionIpcServer::create_buffers(VisionStreamType type, size_t num_buffers, 
 }
 
 void VisionIpcServer::create_buffers_with_sizes(VisionStreamType type, size_t num_buffers, size_t width, size_t height, size_t size, size_t stride, size_t uv_offset) {
+  owns_buffers[type] = true;
   // Create map + alloc requested buffers
   for (size_t i = 0; i < num_buffers; i++){
     VisionBuf* buf = new VisionBuf();
@@ -74,6 +75,19 @@ void VisionIpcServer::create_buffers_with_sizes(VisionStreamType type, size_t nu
 
   // Create msgq publisher for each of the `name` + type combos
   // TODO: compute port number directly if using zmq
+  sockets[type] = PubSocket::create(msg_ctx, get_endpoint_name(name, type), false);
+}
+
+void VisionIpcServer::register_external_buffers(VisionStreamType type, const std::vector<VisionBuf *> &external_buffers) {
+  assert(!external_buffers.empty());
+  assert(buffers.count(type) == 0);
+  owns_buffers[type] = false;
+  buffers[type] = external_buffers;
+  for (size_t i = 0; i < buffers[type].size(); ++i) {
+    buffers[type][i]->idx = i;
+    buffers[type][i]->type = type;
+  }
+  cur_idx[type] = 0;
   sockets[type] = PubSocket::create(msg_ctx, get_endpoint_name(name, type), false);
 }
 
@@ -199,11 +213,14 @@ VisionIpcServer::~VisionIpcServer(){
 
   // VisionBuf cleanup
   for (auto const& [type, buf] : buffers) {
+    const bool owns = owns_buffers.count(type) ? owns_buffers.at(type) : true;
     for (VisionBuf* b : buf){
-      if (b->free() != 0) {
-        LOGE("Failed to free buffer");
+      if (owns) {
+        if (b->free() != 0) {
+          LOGE("Failed to free buffer");
+        }
+        delete b;
       }
-      delete b;
     }
   }
 

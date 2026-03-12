@@ -23,6 +23,7 @@ class VisionIpcServer {
 
   std::map<VisionStreamType, std::atomic<size_t> > cur_idx;
   std::map<VisionStreamType, std::vector<VisionBuf*> > buffers;
+  std::map<VisionStreamType, bool> owns_buffers;
 
   Context * msg_ctx;
   std::map<VisionStreamType, PubSocket*> sockets;
@@ -37,6 +38,7 @@ class VisionIpcServer {
 
   void create_buffers(VisionStreamType type, size_t num_buffers, size_t width, size_t height);
   void create_buffers_with_sizes(VisionStreamType type, size_t num_buffers, size_t width, size_t height, size_t size, size_t stride, size_t uv_offset);
+  void register_external_buffers(VisionStreamType type, const std::vector<VisionBuf *> &external_buffers);
   void send(VisionBuf * buf, VisionIpcBufExtra * extra, bool sync=true);
   void start_listener();
 };

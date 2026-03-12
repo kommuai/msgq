@@ -35,6 +35,7 @@ static void *malloc_with_fd(size_t len, int *fd) {
 void VisionBuf::allocate(size_t length) {
   this->len = length;
   this->mmap_len = this->len + sizeof(uint64_t);
+  this->frame_id_in_buf = true;
   this->addr = malloc_with_fd(this->mmap_len, &this->fd);
   this->frame_id = (uint64_t*)((uint8_t*)this->addr + this->len);
 }
@@ -55,7 +56,7 @@ void VisionBuf::import(){
   this->addr = mmap(NULL, this->mmap_len, PROT_READ | PROT_WRITE, MAP_SHARED, this->fd, 0);
   assert(this->addr != MAP_FAILED);
 
-  this->frame_id = (uint64_t*)((uint8_t*)this->addr + this->len);
+  this->frame_id = this->frame_id_in_buf ? (uint64_t*)((uint8_t*)this->addr + this->len) : nullptr;
 }
 
 
