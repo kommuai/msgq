@@ -37,6 +37,7 @@ cdef extern from "msgq/visionipc/visionipc.h":
     uint64_t timestamp_sof
     uint64_t timestamp_eof
     bool valid
+    uint64_t lease_generation
 
 cdef extern from "msgq/visionipc/visionipc_server.h":
   string get_endpoint_name(string, VisionStreamType)

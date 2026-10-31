@@ -5,6 +5,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <cstring>
 
 #include <poll.h>
 #include <sys/socket.h>
@@ -93,7 +94,13 @@ void VisionIpcServer::register_external_buffers(VisionStreamType type, const std
 
 
 void VisionIpcServer::start_listener(){
+  assert(!listener_thread.joinable());
   listener_thread = std::thread(&VisionIpcServer::listener, this);
+}
+
+void VisionIpcServer::stop_listener() {
+  should_exit = true;
+  if (listener_thread.joinable()) listener_thread.join();
 }
 
 
@@ -124,11 +131,27 @@ void VisionIpcServer::listener(){
 
     // Handle incoming request
     int fd = accept(sock, NULL, NULL);
-    assert(fd >= 0);
+    if (fd < 0) {
+      if (errno == EINTR || errno == EAGAIN) continue;
+      if (!should_exit) LOGE("VisionIPC accept failed: %s", std::strerror(errno));
+      break;
+    }
+
+    // Bound the listener lifetime if a local client connects but never sends
+    // its stream request. Shutdown must not wait forever on an idle peer.
+    struct pollfd request = {.fd = fd, .events = POLLIN, .revents = 0};
+    int ready = poll(&request, 1, 1000);
+    if (ready <= 0 || !(request.revents & POLLIN)) {
+      close(fd);
+      continue;
+    }
 
     VisionStreamType type = VisionStreamType::VISION_STREAM_MAX;
     int r = ipc_sendrecv_with_fds(false, fd, &type, sizeof(type), nullptr, 0, nullptr);
-    assert(r == sizeof(type));
+    if (r != sizeof(type)) {
+      close(fd);
+      continue;
+    }
 
     // send available stream types
     if (type == VisionStreamType::VISION_STREAM_MAX) {
@@ -137,7 +160,10 @@ void VisionIpcServer::listener(){
         available_stream_types.push_back(stream_type);
       }
       r = ipc_sendrecv_with_fds(true, fd, available_stream_types.data(), available_stream_types.size() * sizeof(VisionStreamType), nullptr, 0, nullptr);
-      assert(r == available_stream_types.size() * sizeof(VisionStreamType));
+      if (r != static_cast<int>(available_stream_types.size() * sizeof(VisionStreamType))) {
+        close(fd);
+        continue;
+      }
       close(fd);
       continue;
     }
@@ -208,8 +234,7 @@ void VisionIpcServer::send(VisionBuf * buf, VisionIpcBufExtra * extra, bool sync
 }
 
 VisionIpcServer::~VisionIpcServer(){
-  should_exit = true;
-  listener_thread.join();
+  stop_listener();
 
   // VisionBuf cleanup
   for (auto const& [type, buf] : buffers) {

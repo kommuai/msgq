@@ -18,8 +18,23 @@ enum VisionStreamType {
   VISION_STREAM_WIDE_ROAD,
 
   VISION_STREAM_MAP,
+
+  // Private camera DMA-BUF streams consumed only by encoderd. The public
+  // camera streams remain stable for modeld, UI, snapshots, and other readers.
+  VISION_STREAM_ENC_ROAD,
+  VISION_STREAM_ENC_DRIVER,
+  VISION_STREAM_ENC_WIDE_ROAD,
   VISION_STREAM_MAX,
 };
+
+inline VisionStreamType encoder_stream_for_camera(VisionStreamType stream) {
+  switch (stream) {
+    case VISION_STREAM_ROAD: return VISION_STREAM_ENC_ROAD;
+    case VISION_STREAM_DRIVER: return VISION_STREAM_ENC_DRIVER;
+    case VISION_STREAM_WIDE_ROAD: return VISION_STREAM_ENC_WIDE_ROAD;
+    default: return VISION_STREAM_MAX;
+  }
+}
 
 class VisionBuf {
  public:

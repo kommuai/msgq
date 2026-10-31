@@ -41,4 +41,5 @@ class VisionIpcServer {
   void register_external_buffers(VisionStreamType type, const std::vector<VisionBuf *> &external_buffers);
   void send(VisionBuf * buf, VisionIpcBufExtra * extra, bool sync=true);
   void start_listener();
+  void stop_listener();
 };

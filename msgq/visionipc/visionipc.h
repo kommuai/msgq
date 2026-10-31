@@ -16,6 +16,8 @@ struct VisionIpcBufExtra {
   uint64_t timestamp_sof;
   uint64_t timestamp_eof;
   bool valid;
+  // Nonzero only for leased DMA-BUF frames on private encoderd streams.
+  uint64_t lease_generation = 0;
 };
 
 struct VisionIpcPacket {
