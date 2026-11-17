@@ -24,6 +24,13 @@ enum VisionStreamType {
   VISION_STREAM_ENC_ROAD,
   VISION_STREAM_ENC_DRIVER,
   VISION_STREAM_ENC_WIDE_ROAD,
+
+  // Side-camera streams are owned by sidecamerad and stay separate from the
+  // native camera and encoder streams above.
+  VISION_STREAM_SIDE_FRONT_LEFT,
+  VISION_STREAM_SIDE_FRONT_RIGHT,
+  VISION_STREAM_SIDE_BACK_LEFT,
+  VISION_STREAM_SIDE_BACK_RIGHT,
   VISION_STREAM_MAX,
 };
 

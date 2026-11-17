@@ -29,6 +29,10 @@ cpdef enum VisionStreamType:
   VISION_STREAM_ENC_ROAD
   VISION_STREAM_ENC_DRIVER
   VISION_STREAM_ENC_WIDE_ROAD
+  VISION_STREAM_SIDE_FRONT_LEFT = 7
+  VISION_STREAM_SIDE_FRONT_RIGHT = 8
+  VISION_STREAM_SIDE_BACK_LEFT = 9
+  VISION_STREAM_SIDE_BACK_RIGHT = 10
 
 
 cdef class VisionBuf:
@@ -79,7 +83,7 @@ cdef class VisionIpcServer:
   def create_buffers_with_sizes(self, VisionStreamType tp, size_t num_buffers, size_t width, size_t height, size_t size, size_t stride, size_t uv_offset):
     self.server.create_buffers_with_sizes(tp, num_buffers, width, height, size, stride, uv_offset)
 
-  def send(self, VisionStreamType tp, const unsigned char[:] data, uint32_t frame_id=0, uint64_t timestamp_sof=0, uint64_t timestamp_eof=0):
+  def send(self, VisionStreamType tp, const unsigned char[:] data, uint32_t frame_id=0, uint64_t timestamp_sof=0, uint64_t timestamp_eof=0, bool valid=False):
     cdef cppVisionBuf * buf = self.server.get_buffer(tp)
 
     # Populate buffer
@@ -91,6 +95,7 @@ cdef class VisionIpcServer:
     extra.frame_id = frame_id
     extra.timestamp_sof = timestamp_sof
     extra.timestamp_eof = timestamp_eof
+    extra.valid = valid
 
     self.server.send(buf, &extra, False)
 
